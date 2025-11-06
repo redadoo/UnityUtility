@@ -1,10 +1,10 @@
 
 namespace Utility.DataPersistence
 {
-    public interface IDataPersistence
+    public interface IDataPersistence<TGameData>
     {
-        void LoadData(GameData data);
+        void LoadData(TGameData data);
 
-        void SaveData(ref GameData data);
+        void SaveData(ref TGameData data);
     }
 }

@@ -4,16 +4,17 @@ using System.Collections.Generic;
 
 namespace Utility.DataPersistence
 {
-    public class DataPersistenceManager : GenericSingleton<DataPersistenceManager>
+    public class DataPersistenceManager<TGameData> : GenericSingleton<DataPersistenceManager<TGameData>>
+        where TGameData : class, new()
     {
         [Header("File Storage Config")]
         [SerializeField] private string fileName;
         [SerializeField] private bool useEncryption;
         [SerializeField] private bool save;
 
-        private GameData gameData;
+        private TGameData gameData;
 
-        private List<IDataPersistence> dataPersistenceObjects;
+        private List<IDataPersistence<TGameData>> dataPersistenceObjects;
         private FileDataHandler dataHandler;
 
         protected override void Awake()
@@ -22,57 +23,52 @@ namespace Utility.DataPersistence
 
             if (save)
             {
-                this.dataHandler = new FileDataHandler(Application.persistentDataPath, fileName, useEncryption);
-                this.dataPersistenceObjects = FindAllDataPersistenceObjects();
+                dataHandler = new FileDataHandler(Application.persistentDataPath, fileName, useEncryption);
+                dataPersistenceObjects = FindAllDataPersistenceObjects();
                 LoadGame();
             }
         }
 
-        public void Start()
+        private void Start()
         {
             if (save)
             {
-                this.dataHandler = new FileDataHandler(Application.persistentDataPath, fileName, useEncryption);
-                this.dataPersistenceObjects = FindAllDataPersistenceObjects();
+                dataHandler = new FileDataHandler(Application.persistentDataPath, fileName, useEncryption);
+                dataPersistenceObjects = FindAllDataPersistenceObjects();
                 LoadGame();
             }
         }
+
         public void NewGame()
         {
-            if (save)
-            {
-                this.gameData = new GameData();
-            }
+            if (!save) return;
+            gameData = new TGameData();
         }
 
         public void LoadGame()
         {
-            if (save)
+            if (!save) return;
+
+            gameData = dataHandler.Load<TGameData>();
+
+            if (gameData == null)
             {
-                this.gameData = dataHandler.Load();
-
-                if (this.gameData == null)
-                {
-                    Debug.Log("No data was found. Initializing data to defaults");
-                    NewGame();
-                }
-
-                foreach (IDataPersistence dataPersistenceObj in dataPersistenceObjects)
-                {
-                    dataPersistenceObj.LoadData(gameData);
-                }
+                Debug.Log("No data was found. Initializing data to defaults.");
+                NewGame();
             }
+
+            foreach (var obj in dataPersistenceObjects)
+                obj.LoadData(gameData);
         }
 
         public void SaveGame()
         {
-            if (save)
-            {
-                foreach (IDataPersistence dataPersistenceObj in dataPersistenceObjects)
-                    dataPersistenceObj.SaveData(ref gameData);
+            if (!save) return;
 
-                dataHandler.Save(gameData);
-            }
+            foreach (var obj in dataPersistenceObjects)
+                obj.SaveData(ref gameData);
+
+            dataHandler.Save(gameData);
         }
 
         private void OnApplicationQuit()
@@ -81,12 +77,12 @@ namespace Utility.DataPersistence
                 SaveGame();
         }
 
-        private List<IDataPersistence> FindAllDataPersistenceObjects()
+        private List<IDataPersistence<TGameData>> FindAllDataPersistenceObjects()
         {
-            IEnumerable<IDataPersistence> dataPersistenceObjects = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).OfType<IDataPersistence>();
+            var objs = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
+                .OfType<IDataPersistence<TGameData>>();
 
-            return new List<IDataPersistence>(dataPersistenceObjects);
+            return new List<IDataPersistence<TGameData>>(objs);
         }
     }
-
 }
