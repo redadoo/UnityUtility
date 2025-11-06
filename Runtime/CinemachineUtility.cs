@@ -3,7 +3,7 @@ using Unity.Cinemachine;
 #endif
 using UnityEngine;
 
-namespace Utility
+namespace UnityUtility
 {
     public static class CinemachineUtility
     {

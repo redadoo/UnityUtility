@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 
-namespace Utility.Ui
+namespace UnityUtility.Ui
 {
     public class UIMenuController<T> : GenericSingleton<UIMenuController<T>> where T : Enum
     {

@@ -1,5 +1,5 @@
 using UnityEngine;
-namespace Utility.Audio
+namespace UnityUtility.Audio
 {
     public class SoundBuilder
     {

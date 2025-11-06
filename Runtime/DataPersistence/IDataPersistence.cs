@@ -1,5 +1,5 @@
 
-namespace Utility.DataPersistence
+namespace UnityUtility.DataPersistence
 {
     public interface IDataPersistence<TGameData>
     {

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Utility.Particle
+namespace UnityUtility.Particle
 {
     public class ParticleBuilder
     {

@@ -2,7 +2,7 @@
 using UnityEngine.Pool;
 using System.Collections.Generic;
 
-namespace Utility.Audio
+namespace UnityUtility.Audio
 {
     public class SoundManager : PersistentSingleton<SoundManager>
     {

@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-namespace Utility.Particle
+namespace UnityUtility.Particle
 {
     public class ParticleEmitter : MonoBehaviour
     {

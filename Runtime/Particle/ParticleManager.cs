@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 
-namespace Utility.Particle
+namespace UnityUtility.Particle
 {
     public class ParticleManager : GenericSingleton<ParticleManager>
     {

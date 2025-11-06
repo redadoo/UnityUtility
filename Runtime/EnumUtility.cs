@@ -1,6 +1,6 @@
 using System;
 
-namespace Utility
+namespace UnityUtility
 {
     public static class EnumUtility
     {

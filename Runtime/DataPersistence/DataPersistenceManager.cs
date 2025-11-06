@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace Utility.DataPersistence
+namespace UnityUtility.DataPersistence
 {
     public class DataPersistenceManager<TGameData> : GenericSingleton<DataPersistenceManager<TGameData>>
         where TGameData : class, new()

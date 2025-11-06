@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using UnityEngine;
 
-namespace Utility.DataPersistence
+namespace UnityUtility.DataPersistence
 {
     public class FileDataHandler
     {
