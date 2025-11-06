@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "displayName": "UnityUtility",
   "description": "assortment of utility scripts for Unity",
-  "unity": "6000.2.8f1",
+  "unity": "6000.2",
   "dependencies": {
     "com.unity.Cinemachine": "3.1.5"
   },
