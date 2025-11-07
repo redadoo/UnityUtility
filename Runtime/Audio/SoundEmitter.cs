@@ -6,11 +6,10 @@ namespace UnityUtility.Audio
     [RequireComponent(typeof(AudioSource))]
     public class SoundEmitter : MonoBehaviour
     {
-        public SoundData Data { get; private set; }
+        public SoundData data { get; private set; }
 
         private AudioSource audioSource;
         private Coroutine coroutine;
-
 
         private void Awake()
         {
@@ -46,15 +45,16 @@ namespace UnityUtility.Audio
             SoundManager.Instance.ReturnToPool(this);
         }
 
-        public void Initialize(SoundData data)
+        public void Initialize(SoundData newData)
         {
-            Data = data;
+            data = newData;
 
-            audioSource.clip = data.clip;
-            audioSource.outputAudioMixerGroup = data.group;
-            audioSource.loop = data.loop;
-            audioSource.playOnAwake = data.playOnAwake;
-            audioSource.volume = data.volume;
+            audioSource.clip = newData.clip;
+            audioSource.loop = newData.loop;
+            audioSource.pitch = newData.pitch;
+            audioSource.volume = newData.volume;
+            audioSource.playOnAwake = newData.playOnAwake;
+            audioSource.outputAudioMixerGroup = newData.group;
         }
 
         public void WithRandomPitch(float min = -0.05f, float max = 0.05f)

@@ -14,6 +14,9 @@ namespace UnityUtility.Audio
 
         [Range(0,1)]
         public float volume = 1;
+
+        [Range(-3, 3)]
+        public float pitch = 1;
     }
 }
 
