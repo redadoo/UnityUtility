@@ -1,6 +1,8 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityUtility.Singleton;
+using UnityUtility.Interfaces;
 using System.Collections.Generic;
 
 namespace UnityUtility.Ui

@@ -1,6 +1,7 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
+using UnityUtility.Singleton;
+using System.Collections.Generic;
 
 namespace UnityUtility.Particle
 {

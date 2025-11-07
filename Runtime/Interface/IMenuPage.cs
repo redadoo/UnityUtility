@@ -1,5 +1,5 @@
 
-namespace UnityUtility.Ui
+namespace UnityUtility.Interfaces
 {
     public interface IMenuPage
     {
