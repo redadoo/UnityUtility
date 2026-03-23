@@ -13,7 +13,7 @@ namespace UnityUtility.DataPersistence
         [SerializeField] private bool useEncryption;
         [SerializeField] private bool save;
 
-        private TGameData gameData;
+        public TGameData gameData;
 
         private List<IDataPersistence<TGameData>> dataPersistenceObjects;
         private FileDataHandler dataHandler;
