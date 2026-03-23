@@ -72,6 +72,13 @@ namespace UnityUtility.DataPersistence
             dataHandler.Save(gameData);
         }
 
+        public bool HaveSaves()
+        {
+            if (!save) return false;
+
+            return dataHandler.SaveExists();
+        }
+
         private void OnApplicationQuit()
         {
             if (save)

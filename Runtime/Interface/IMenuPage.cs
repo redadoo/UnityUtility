@@ -1,4 +1,3 @@
-
 namespace UnityUtility.Interfaces
 {
     public interface IMenuPage

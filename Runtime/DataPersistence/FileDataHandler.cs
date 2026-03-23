@@ -77,6 +77,12 @@ namespace UnityUtility.DataPersistence
             }
         }
 
+        public bool SaveExists()
+        {
+            string fullPath = Path.Combine(dataDirPath, dataFileName);
+            return File.Exists(fullPath);
+        }
+
         private string EncryptDecrypt(string data)
         {
             char[] modifiedChars = new char[data.Length];
