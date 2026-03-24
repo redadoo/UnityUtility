@@ -18,17 +18,6 @@ namespace UnityUtility.DataPersistence
         private List<IDataPersistence<TGameData>> dataPersistenceObjects;
         private FileDataHandler dataHandler;
 
-        protected override void Awake()
-        {
-            base.Awake();
-
-            if (save)
-            {
-                dataHandler = new FileDataHandler(Application.persistentDataPath, fileName, useEncryption);
-                dataPersistenceObjects = FindAllDataPersistenceObjects();
-                LoadGame();
-            }
-        }
 
         private void Start()
         {
@@ -65,6 +54,8 @@ namespace UnityUtility.DataPersistence
         public void SaveGame()
         {
             if (!save) return;
+
+            dataPersistenceObjects = FindAllDataPersistenceObjects();
 
             foreach (var obj in dataPersistenceObjects)
                 obj.SaveData(ref gameData);
