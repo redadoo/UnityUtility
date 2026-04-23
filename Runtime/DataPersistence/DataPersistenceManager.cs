@@ -5,7 +5,8 @@ using System.Collections.Generic;
 
 namespace UnityUtility.DataPersistence
 {
-    public class DataPersistenceManager<TGameData> : MonoBehaviour where TGameData : class, new()
+    public class DataPersistenceManager<TGameData>
+        where TGameData : class, new()
     {
         [Header("File Storage Config")]
         [SerializeField] private bool save = true;
@@ -22,8 +23,9 @@ namespace UnityUtility.DataPersistence
         public TGameData gameData;
 
         private bool isInitialized = false;
+        private bool autoUpdateDataPersistenceObjects = false;
 
-        private void Awake()
+        public void Init()
         {
             if (!save) return;
 
@@ -37,7 +39,7 @@ namespace UnityUtility.DataPersistence
             isInitialized = true;
         }
 
-        private void Start()
+        public void StartGame()
         {
             if (!save || !isInitialized) return;
 
@@ -54,7 +56,7 @@ namespace UnityUtility.DataPersistence
 
         public void LoadGame()
         {
-            if (!save) return;
+            if (!save || !isInitialized) return;
 
             gameData = dataHandler.Load<TGameData>();
 
@@ -63,6 +65,7 @@ namespace UnityUtility.DataPersistence
                 Debug.LogWarning("No valid save found. Creating new game.");
                 NewGame();
             }
+
 
             foreach (var obj in dataPersistenceObjects)
             {
@@ -81,7 +84,12 @@ namespace UnityUtility.DataPersistence
 
         public void SaveGame()
         {
-            if (!save) return;
+            if (!save || !isInitialized) return;
+
+            if (autoUpdateDataPersistenceObjects)
+            {
+                dataPersistenceObjects = FindAllDataPersistenceObjects();
+            }
 
             foreach (var obj in dataPersistenceObjects)
             {
@@ -102,25 +110,29 @@ namespace UnityUtility.DataPersistence
 
         public bool HaveSaves()
         {
-            return save && dataHandler.SaveExists();
+            return save && dataHandler != null && dataHandler.SaveExists();
         }
 
-
-        private void OnApplicationPause(bool pauseStatus)
+        public void HandleApplicationPause(bool pauseStatus)
         {
             if (pauseStatus)
                 SaveGame();
         }
 
-        private void OnApplicationQuit()
+        public void HandleApplicationQuit()
         {
             SaveGame();
         }
 
+        public void UpdateReference()
+        {
+            dataPersistenceObjects = FindAllDataPersistenceObjects();
+        }
 
         private List<IDataPersistence<TGameData>> FindAllDataPersistenceObjects()
         {
-            return FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
+            return UnityEngine.Object
+                .FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
                 .OfType<IDataPersistence<TGameData>>()
                 .ToList();
         }
