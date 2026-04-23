@@ -1,6 +1,9 @@
 using System;
 using System.IO;
+using System.Linq;
+using System.Text;
 using UnityEngine;
+using System.Security.Cryptography;
 
 namespace UnityUtility.DataPersistence
 {
@@ -9,43 +12,65 @@ namespace UnityUtility.DataPersistence
         private readonly string dataDirPath;
         private readonly string dataFileName;
         private readonly bool useEncryption;
-        private const string encryptionCodeWord = "word";
 
-        public FileDataHandler(string dataDirPath, string dataFileName, bool useEncrypt)
+        private const string SALT = "your-game-salt-change-this";
+        private const int KEY_SIZE = 32;
+        private const int HMAC_SIZE = 32;
+
+        public FileDataHandler(string dataDirPath, string dataFileName, bool useEncryption)
         {
             this.dataDirPath = dataDirPath;
             this.dataFileName = dataFileName;
-            this.useEncryption = useEncrypt;
+            this.useEncryption = useEncryption;
         }
 
         public T Load<T>() where T : class
         {
             string fullPath = Path.Combine(dataDirPath, dataFileName);
-            T loadedData = null;
 
-            if (File.Exists(fullPath))
+            if (!File.Exists(fullPath))
+                return null;
+
+            try
             {
-                try
+                byte[] fileBytes = File.ReadAllBytes(fullPath);
+
+                string json;
+
+                if (useEncryption)
                 {
-                    string dataToLoad;
-                    using (FileStream stream = new(fullPath, FileMode.Open))
-                    using (StreamReader reader = new(stream))
+                    if (fileBytes.Length < HMAC_SIZE)
+                        throw new Exception("Invalid file format");
+
+                    byte[] storedHmac = new byte[HMAC_SIZE];
+                    byte[] encryptedData = new byte[fileBytes.Length - HMAC_SIZE];
+
+                    Array.Copy(fileBytes, 0, storedHmac, 0, HMAC_SIZE);
+                    Array.Copy(fileBytes, HMAC_SIZE, encryptedData, 0, encryptedData.Length);
+
+                    byte[] key = GetKey();
+
+                    byte[] computedHmac = ComputeHMAC(encryptedData, key);
+                    if (!storedHmac.SequenceEqual(computedHmac))
                     {
-                        dataToLoad = reader.ReadToEnd();
+                        Debug.LogError("Save file has been tampered with or corrupted.");
+                        return null;
                     }
 
-                    if (useEncryption)
-                        dataToLoad = EncryptDecrypt(dataToLoad);
-
-                    loadedData = JsonUtility.FromJson<T>(dataToLoad);
+                    json = Decrypt(encryptedData, key);
                 }
-                catch (Exception ex)
+                else
                 {
-                    Debug.LogError($"Error occurred when trying to load data from file: {fullPath}\n{ex}");
+                    json = Encoding.UTF8.GetString(fileBytes);
                 }
-            }
 
-            return loadedData;
+                return JsonUtility.FromJson<T>(json);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error loading file: {fullPath}\n{ex}");
+                return null;
+            }
         }
 
         public void Save<T>(T data)
@@ -56,16 +81,26 @@ namespace UnityUtility.DataPersistence
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
 
-                string dataToStore = JsonUtility.ToJson(data, true);
+                string json = JsonUtility.ToJson(data, true);
+                byte[] fileBytes;
 
                 if (useEncryption)
-                    dataToStore = EncryptDecrypt(dataToStore);
-
-                using (FileStream stream = new(fullPath, FileMode.Create))
-                using (StreamWriter writer = new(stream))
                 {
-                    writer.Write(dataToStore);
+                    byte[] key = GetKey();
+                    byte[] encryptedData = Encrypt(json, key);
+                    byte[] hmac = ComputeHMAC(encryptedData, key);
+
+                    fileBytes = new byte[hmac.Length + encryptedData.Length];
+
+                    Array.Copy(hmac, 0, fileBytes, 0, hmac.Length);
+                    Array.Copy(encryptedData, 0, fileBytes, hmac.Length, encryptedData.Length);
                 }
+                else
+                {
+                    fileBytes = Encoding.UTF8.GetBytes(json);
+                }
+
+                File.WriteAllBytes(fullPath, fileBytes);
 
 #if UNITY_EDITOR
                 Debug.Log($"Saved data to: {fullPath}");
@@ -73,7 +108,7 @@ namespace UnityUtility.DataPersistence
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Error occurred when trying to save data to file: {fullPath}\n{ex}");
+                Debug.LogError($"Error saving file: {fullPath}\n{ex}");
             }
         }
 
@@ -83,14 +118,60 @@ namespace UnityUtility.DataPersistence
             return File.Exists(fullPath);
         }
 
-        private string EncryptDecrypt(string data)
+        private byte[] GetKey()
         {
-            char[] modifiedChars = new char[data.Length];
-            for (int i = 0; i < data.Length; i++)
+            string deviceId = SystemInfo.deviceUniqueIdentifier;
+
+            using var derive = new Rfc2898DeriveBytes(
+                deviceId,
+                Encoding.UTF8.GetBytes(SALT),
+                10000,
+                HashAlgorithmName.SHA256
+            );
+
+            return derive.GetBytes(KEY_SIZE);
+        }
+        
+        private byte[] Encrypt(string plainText, byte[] key)
+        {
+            using Aes aes = Aes.Create();
+            aes.Key = key;
+            aes.GenerateIV();
+
+            using MemoryStream ms = new();
+
+            ms.Write(aes.IV, 0, aes.IV.Length);
+
+            using (CryptoStream cs = new(ms, aes.CreateEncryptor(), CryptoStreamMode.Write))
+            using (StreamWriter sw = new(cs))
             {
-                modifiedChars[i] = (char)(data[i] ^ encryptionCodeWord[i % encryptionCodeWord.Length]);
+                sw.Write(plainText);
             }
-            return new string(modifiedChars);
+
+            return ms.ToArray();
+        }
+
+        private string Decrypt(byte[] encryptedData, byte[] key)
+        {
+            using Aes aes = Aes.Create();
+            aes.Key = key;
+
+            byte[] iv = new byte[aes.BlockSize / 8];
+            Array.Copy(encryptedData, iv, iv.Length);
+
+            aes.IV = iv;
+
+            using MemoryStream ms = new(encryptedData, iv.Length, encryptedData.Length - iv.Length);
+            using CryptoStream cs = new(ms, aes.CreateDecryptor(), CryptoStreamMode.Read);
+            using StreamReader sr = new(cs);
+
+            return sr.ReadToEnd();
+        }
+
+        private byte[] ComputeHMAC(byte[] data, byte[] key)
+        {
+            using var hmac = new HMACSHA256(key);
+            return hmac.ComputeHash(data);
         }
     }
 }

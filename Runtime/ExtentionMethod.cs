@@ -6,6 +6,35 @@ namespace UnityUtility
 {
     public static class ExtentionsMethods
     {
+        public static void ReplaceComponents<T>(GameObject target, GameObject source) where T : Component
+        {
+            //TODO: finish
+            return;
+
+            //foreach (var c in target.GetComponents<T>())
+            //    Destroy(c);
+
+            //foreach (var sourceComp in source.GetComponents<T>())
+            //{
+            //    var newComp = target.AddComponent(sourceComp.GetType());
+            //    JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(sourceComp), newComp);
+            //}
+        }
+
+        public static void CopyColliders(GameObject target, GameObject prefab)
+        {
+            //TODO: finish
+
+            //target.GetComponentsInChildren<Collider>().ForEach(originCollider =>
+            //{
+            //    foreach (var destinationTransform in _destinationRoot.GetComponentsInChildren<Transform>())
+            //    {
+            //        if (destinationTransform.name != originCollider.name) continue;
+            //        destinationTransform.gameObject.AddComponent(originCollider.GetType()).CopyPropertiesFrom(originCollider);
+            //    }
+            //});
+        }
+
         public static void CopyCollidersFromPrefab(GameObject target, GameObject prefab)
         {
             foreach (var c in target.GetComponents<Collider2D>())

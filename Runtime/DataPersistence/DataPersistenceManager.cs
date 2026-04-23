@@ -1,38 +1,55 @@
-using UnityEngine;
+using System;
 using System.Linq;
-using UnityUtility.Singleton;
+using UnityEngine;
 using System.Collections.Generic;
 
 namespace UnityUtility.DataPersistence
 {
-    public class DataPersistenceManager<TGameData> : GenericSingleton<DataPersistenceManager<TGameData>>
-        where TGameData : class, new()
+    public class DataPersistenceManager<TGameData> : MonoBehaviour where TGameData : class, new()
     {
         [Header("File Storage Config")]
-        [SerializeField] private string fileName;
-        [SerializeField] private bool useEncryption;
-        [SerializeField] private bool save;
+        [SerializeField] private bool save = true;
+        [SerializeField] private string fileName = "save.dat";
+        [SerializeField] private bool useEncryption = true;
+
+        private FileDataHandler dataHandler;
+        private List<IDataPersistence<TGameData>> dataPersistenceObjects;
+
+        public Action OnLoad;
+        public Action OnSave;
+        public Action OnNewGame;
 
         public TGameData gameData;
 
-        private List<IDataPersistence<TGameData>> dataPersistenceObjects;
-        private FileDataHandler dataHandler;
+        private bool isInitialized = false;
 
+        private void Awake()
+        {
+            if (!save) return;
+
+            dataHandler = new FileDataHandler(
+                Application.persistentDataPath,
+                fileName,
+                useEncryption
+            );
+
+            dataPersistenceObjects = FindAllDataPersistenceObjects();
+            isInitialized = true;
+        }
 
         private void Start()
         {
-            if (save)
-            {
-                dataHandler = new FileDataHandler(Application.persistentDataPath, fileName, useEncryption);
-                dataPersistenceObjects = FindAllDataPersistenceObjects();
-                LoadGame();
-            }
+            if (!save || !isInitialized) return;
+
+            LoadGame();
         }
 
         public void NewGame()
         {
             if (!save) return;
+
             gameData = new TGameData();
+            OnNewGame?.Invoke();
         }
 
         public void LoadGame()
@@ -43,45 +60,69 @@ namespace UnityUtility.DataPersistence
 
             if (gameData == null)
             {
-                Debug.Log("No data was found. Initializing data to defaults.");
+                Debug.LogWarning("No valid save found. Creating new game.");
                 NewGame();
             }
 
             foreach (var obj in dataPersistenceObjects)
-                obj.LoadData(gameData);
+            {
+                try
+                {
+                    obj.LoadData(gameData);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error loading data into {obj}: {ex}");
+                }
+            }
+
+            OnLoad?.Invoke();
         }
 
         public void SaveGame()
         {
             if (!save) return;
 
-            dataPersistenceObjects = FindAllDataPersistenceObjects();
-
             foreach (var obj in dataPersistenceObjects)
-                obj.SaveData(ref gameData);
+            {
+                try
+                {
+                    obj.SaveData(ref gameData);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error saving data from {obj}: {ex}");
+                }
+            }
 
             dataHandler.Save(gameData);
+
+            OnSave?.Invoke();
         }
 
         public bool HaveSaves()
         {
-            if (!save) return false;
+            return save && dataHandler.SaveExists();
+        }
 
-            return dataHandler.SaveExists();
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus)
+                SaveGame();
         }
 
         private void OnApplicationQuit()
         {
-            if (save)
-                SaveGame();
+            SaveGame();
         }
+
 
         private List<IDataPersistence<TGameData>> FindAllDataPersistenceObjects()
         {
-            var objs = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
-                .OfType<IDataPersistence<TGameData>>();
-
-            return new List<IDataPersistence<TGameData>>(objs);
+            return FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
+                .OfType<IDataPersistence<TGameData>>()
+                .ToList();
         }
     }
 }
