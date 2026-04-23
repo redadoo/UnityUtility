@@ -5,14 +5,8 @@ using System.Collections.Generic;
 
 namespace UnityUtility.DataPersistence
 {
-    public class DataPersistenceManager<TGameData>
-        where TGameData : class, new()
+    public class DataPersistenceManager<TGameData> where TGameData : class, new()
     {
-        [Header("File Storage Config")]
-        [SerializeField] private bool save = true;
-        [SerializeField] private string fileName = "save.dat";
-        [SerializeField] private bool useEncryption = true;
-
         private FileDataHandler dataHandler;
         private List<IDataPersistence<TGameData>> dataPersistenceObjects;
 
@@ -20,10 +14,13 @@ namespace UnityUtility.DataPersistence
         public Action OnSave;
         public Action OnNewGame;
 
-        public TGameData gameData;
-
         private bool isInitialized = false;
-        private bool autoUpdateDataPersistenceObjects = false;
+        
+        public bool save = true;
+        public TGameData gameData;
+        public bool useEncryption = true;
+        public string fileName = "save.dat";
+        public bool autoUpdateDataPersistenceObjects = false;
 
         public void Init()
         {
